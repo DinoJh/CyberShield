@@ -1,0 +1,520 @@
+/* style.css - Estilos principales de CyberShield */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Fira Code', monospace;
+    background: #0a0e27;
+    min-height: 100vh;
+    color: #00ff41;
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* Matrix rain effect */
+.matrix-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.1;
+}
+
+.matrix-column {
+    position: absolute;
+    top: -100%;
+    font-size: 14px;
+    color: #00ff41;
+    text-shadow: 0 0 5px #00ff41;
+    animation: matrix-fall linear infinite;
+}
+
+@keyframes matrix-fall {
+    to { top: 100%; }
+}
+
+/* Scanlines effect */
+.scanlines {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+    background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 255, 65, 0.03),
+        rgba(0, 255, 65, 0.03) 1px,
+        transparent 1px,
+        transparent 2px
+    );
+}
+
+/* Terminal box styles */
+.terminal-box {
+    background: rgba(10, 14, 39, 0.95);
+    border: 2px solid #00ff41;
+    border-radius: 5px;
+    box-shadow: 
+        0 0 20px rgba(0, 255, 65, 0.3),
+        inset 0 0 50px rgba(0, 255, 65, 0.05);
+    max-width: 500px;
+    width: 100%;
+    animation: terminalBoot 0.5s;
+    overflow: hidden;
+}
+
+@keyframes terminalBoot {
+    0% { 
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    50% { border-color: #ff00ff; }
+    100% { 
+        opacity: 1;
+        transform: scale(1);
+        border-color: #00ff41;
+    }
+}
+
+.terminal-header {
+    background: linear-gradient(180deg, #1a1f3a 0%, #0f1228 100%);
+    padding: 10px 15px;
+    border-bottom: 1px solid #00ff41;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.terminal-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1px solid;
+}
+
+.dot-red { background: #ff5555; border-color: #ff0000; box-shadow: 0 0 5px #ff0000; }
+.dot-yellow { background: #ffff55; border-color: #ffff00; box-shadow: 0 0 5px #ffff00; }
+.dot-green { background: #55ff55; border-color: #00ff00; box-shadow: 0 0 5px #00ff00; }
+
+.terminal-title {
+    flex: 1;
+    text-align: center;
+    color: #00ff41;
+    font-size: 0.9em;
+    text-shadow: 0 0 10px #00ff41;
+}
+
+/* Logo */
+.logo {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.logo h1 {
+    font-size: 2.5em;
+    color: #00ff41;
+    text-shadow: 
+        0 0 10px #00ff41,
+        0 0 20px #00ff41,
+        0 0 30px #00ff41;
+    margin-bottom: 5px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.logo .subtitle {
+    color: #00ffff;
+    font-size: 0.8em;
+    text-shadow: 0 0 5px #00ffff;
+}
+
+/* Terminal prompt */
+.terminal-prompt {
+    color: #00ff41;
+    margin-bottom: 5px;
+    font-size: 0.9em;
+}
+
+.terminal-prompt::before {
+    content: "root@cyberkit:~$ ";
+    color: #ff00ff;
+    text-shadow: 0 0 5px #ff00ff;
+}
+
+/* Form elements */
+.input-group {
+    margin-bottom: 20px;
+}
+
+.input-group input, .input-group textarea {
+    width: 100%;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid #00ff41;
+    border-radius: 3px;
+    color: #00ff41;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.95em;
+    transition: all 0.3s;
+}
+
+.input-group input:focus, .input-group textarea:focus {
+    outline: none;
+    box-shadow: 0 0 15px rgba(0, 255, 65, 0.5);
+    border-color: #00ffff;
+}
+
+.input-group input::placeholder, .input-group textarea::placeholder {
+    color: rgba(0, 255, 65, 0.3);
+}
+
+textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+/* Buttons */
+.btn {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #00ff41;
+    background: rgba(0, 255, 65, 0.1);
+    color: #00ff41;
+    font-family: 'Fira Code', monospace;
+    font-size: 1em;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: 700;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 255, 65, 0.2);
+    transition: left 0.3s;
+}
+
+.btn:hover::before {
+    left: 100%;
+}
+
+.btn:hover {
+    box-shadow: 
+        0 0 20px rgba(0, 255, 65, 0.6),
+        inset 0 0 20px rgba(0, 255, 65, 0.2);
+    border-color: #00ffff;
+    color: #00ffff;
+    transform: translateY(-2px);
+}
+
+.btn-small {
+    padding: 10px 15px;
+    border: 1px solid #00ff41;
+    background: rgba(0, 0, 0, 0.5);
+    color: #00ff41;
+    font-family: 'Fira Code', monospace;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 0.85em;
+    white-space: nowrap;
+}
+
+.btn-small:hover {
+    background: rgba(0, 255, 65, 0.2);
+    box-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+}
+
+.logout-btn {
+    padding: 10px 20px;
+    background: rgba(255, 0, 0, 0.2);
+    color: #ff0000;
+    border: 1px solid #ff0000;
+    font-family: 'Fira Code', monospace;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.85em;
+}
+
+.logout-btn:hover {
+    background: rgba(255, 0, 0, 0.3);
+    box-shadow: 0 0 15px rgba(255, 0, 0, 0.6);
+}
+
+/* Dashboard */
+.header {
+    background: rgba(10, 14, 39, 0.95);
+    border: 2px solid #00ff41;
+    border-radius: 5px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.header h2 {
+    color: #00ff41;
+    text-shadow: 0 0 10px #00ff41;
+    font-size: 1.5em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.status-indicator {
+    width: 10px;
+    height: 10px;
+    background: #00ff41;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #00ff41;
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%, 50%, 100% { opacity: 1; }
+    25%, 75% { opacity: 0.3; }
+}
+
+/* Navigation tabs */
+.nav-tabs {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.nav-tabs button {
+    padding: 10px 20px;
+    border: 1px solid #00ff41;
+    background: rgba(0, 0, 0, 0.5);
+    color: #00ff41;
+    font-family: 'Fira Code', monospace;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 0.85em;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.nav-tabs button:hover {
+    background: rgba(0, 255, 65, 0.1);
+    box-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+}
+
+.nav-tabs button.active {
+    background: rgba(0, 255, 65, 0.2);
+    border-color: #00ffff;
+    color: #00ffff;
+    box-shadow: 0 0 15px rgba(0, 255, 65, 0.5);
+}
+
+/* Cards */
+.card {
+    background: rgba(10, 14, 39, 0.95);
+    border: 1px solid #00ff41;
+    border-radius: 5px;
+    padding: 25px;
+    margin-bottom: 20px;
+    box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
+    position: relative;
+}
+
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, #00ff41, #00ffff, #ff00ff);
+    animation: colorShift 3s infinite;
+}
+
+@keyframes colorShift {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.card h3 {
+    color: #00ffff;
+    text-shadow: 0 0 10px #00ffff;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-size: 1.1em;
+}
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid #00ff41;
+    padding: 20px;
+    border-radius: 3px;
+    text-align: center;
+    box-shadow: 0 0 10px rgba(0, 255, 65, 0.2);
+    transition: all 0.3s;
+}
+
+.stat-card:hover {
+    border-color: #00ffff;
+    box-shadow: 0 0 20px rgba(0, 255, 65, 0.4);
+    transform: translateY(-5px);
+}
+
+.stat-value {
+    font-size: 2.5em;
+    font-weight: bold;
+    color: #00ff41;
+    text-shadow: 0 0 15px #00ff41;
+    font-family: 'Fira Code', monospace;
+}
+
+.stat-label {
+    color: rgba(0, 255, 65, 0.7);
+    margin-top: 10px;
+    font-size: 0.85em;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Strength meter */
+.strength-meter {
+    height: 8px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid #00ff41;
+    border-radius: 3px;
+    margin-top: 10px;
+    overflow: hidden;
+    position: relative;
+}
+
+.strength-bar {
+    height: 100%;
+    transition: all 0.3s;
+    box-shadow: 0 0 10px currentColor;
+}
+
+.strength-weak { 
+    background: #ff0000; 
+    width: 33%;
+    box-shadow: 0 0 15px #ff0000;
+}
+
+.strength-medium { 
+    background: #ffff00; 
+    width: 66%;
+    box-shadow: 0 0 15px #ffff00;
+}
+
+.strength-strong { 
+    background: #00ff41; 
+    width: 100%;
+    box-shadow: 0 0 15px #00ff41;
+}
+
+/* Notes */
+.note-item {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(0, 255, 65, 0.3);
+    padding: 15px;
+    border-radius: 3px;
+    margin-bottom: 15px;
+    transition: all 0.3s;
+}
+
+.note-item:hover {
+    border-color: #00ff41;
+    box-shadow: 0 0 15px rgba(0, 255, 65, 0.3);
+}
+
+.note-item h4 {
+    color: #00ffff;
+    margin-bottom: 10px;
+    text-shadow: 0 0 5px #00ffff;
+}
+
+.note-item p {
+    color: rgba(0, 255, 65, 0.7);
+    line-height: 1.6;
+    font-size: 0.85em;
+}
+
+.note-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.encrypted-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    background: rgba(0, 255, 255, 0.2);
+    border: 1px solid #00ffff;
+    border-radius: 3px;
+    font-size: 0.75em;
+    color: #00ffff;
+    margin-left: 10px;
+    text-shadow: 0 0 5px #00ffff;
+}
+
+/* Utilities */
+.hint {
+    text-align: center;
+    margin-top: 15px;
+    color: rgba(0, 255, 65, 0.5);
+    font-size: 0.75em;
+}
+
+.hint strong {
+    color: #00ffff;
+    text-shadow: 0 0 5px #00ffff;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .header {
+        flex-direction: column;
+    }
+
+    .nav-tabs {
+        width: 100%;
+    }
+
+    .nav-tabs button {
+        flex: 1;
+        min-width: 0;
+    }
+}
