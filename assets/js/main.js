@@ -25,16 +25,37 @@ function createMatrix() {
 
 // Cambiar entre pestañas
 function switchTab(tabName) {
+    // Ocultar todas las pestañas
     const tabs = document.querySelectorAll('.tab-content');
-    const buttons = document.querySelectorAll('.nav-tabs button:not([onclick*="window.location"])');
+    tabs.forEach(tab => tab.style.display = 'none');
     
-    tabs.forEach(tab => tab.classList.remove('active'));
-    buttons.forEach(btn => btn.classList.remove('active'));
+    // Remover clase active de todos los botones de navegación
+    const buttons = document.querySelectorAll('.nav-tabs button');
+    buttons.forEach(btn => {
+        if (!btn.hasAttribute('onclick') || !btn.getAttribute('onclick').includes('window.location')) {
+            btn.classList.remove('active');
+        }
+    });
     
+    // Mostrar la pestaña seleccionada
     const activeTab = document.getElementById(tabName);
     if (activeTab) {
-        activeTab.classList.add('active');
-        event.target.classList.add('active');
+        activeTab.style.display = 'block';
+    }
+    
+    // Agregar clase active al botón clickeado (si viene del nav-tabs)
+    if (event && event.target) {
+        const clickedButton = event.target.closest('button');
+        if (clickedButton && clickedButton.parentElement.classList.contains('nav-tabs')) {
+            clickedButton.classList.add('active');
+        }
+    }
+    
+    // Si se accede a perfil desde el header, no hay botón que marcar como activo en nav-tabs
+    // Pero si queremos, podemos buscar el botón correspondiente
+    if (tabName === 'profile') {
+        // Remover active de todos los botones
+        buttons.forEach(btn => btn.classList.remove('active'));
     }
 }
 

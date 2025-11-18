@@ -104,17 +104,3 @@ $actionLabels = [
         </div>
     </div>
 </div>
-
-<div class="card">
-    <h3>▓▒░ INFORMACIÓN DE TU CUENTA ░▒▓</h3>
-    <div style="background: rgba(0, 255, 255, 0.1); border: 1px solid #00ffff; padding: 15px; border-radius: 3px;">
-        <p style="color: #00ffff; line-height: 1.8; font-size: 0.9em;">
-            <strong>Usuario:</strong> <?php echo htmlspecialchars($_SESSION['username']); ?><br>
-            <strong>Última conexión:</strong> <?php echo date('d/m/Y H:i:s'); ?><br>
-            <strong>Nivel de seguridad:</strong> <span style="color: #00ff41;">★★★★★ MÁXIMO</span><br>
-            <strong>Algoritmo de encriptación:</strong> AES-256-CBC<br>
-            <strong>Hash de contraseña:</strong> Argon2id / bcrypt<br>
-            <strong>Salt único:</strong> <?php echo substr($_SESSION['master_salt'], 0, 16); ?>...
-        </p>
-    </div>
-</div>

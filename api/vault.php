@@ -7,11 +7,29 @@ header('Content-Type: application/json');
 
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 $userId = $_SESSION['user_id'];
+
+// Obtener información de bóveda del usuario
+$conn = getDBConnection();
+$stmt = $conn->prepare("SELECT has_vault_password FROM users WHERE id = ?");
+$stmt->execute([$userId]);
+$user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+$hasVaultPassword = $user['has_vault_password'] ?? false;
+
+// Si tiene contraseña de bóveda, verificar que esté desbloqueada
+if ($hasVaultPassword) {
+    if (!isset($_SESSION['vault_unlocked']) || !$_SESSION['vault_unlocked']) {
+        jsonResponse(false, '[ ACCESO DENEGADO ] Debes desbloquear la bóveda primero');
+    }
+}
+
+// IMPORTANTE: Siempre usar la contraseña de CUENTA para encriptar/desencriptar
+// La contraseña de bóveda es SOLO para control de acceso
 $masterKey = $_SESSION['master_key'] ?? '';
 $masterSalt = $_SESSION['master_salt'] ?? '';
 
 if (empty($masterKey) || empty($masterSalt)) {
-    jsonResponse(false, '[ ERROR ] Clave maestra no disponible');
+    jsonResponse(false, '[ ERROR ] Clave de encriptación no disponible');
 }
 
 try {

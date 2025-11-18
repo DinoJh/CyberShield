@@ -10,6 +10,8 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(100) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     master_salt VARCHAR(64) NOT NULL,
+    vault_password_hash VARCHAR(255) NULL,
+    has_vault_password BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_login TIMESTAMP NULL,
     login_attempts INT DEFAULT 0,

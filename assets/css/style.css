@@ -320,6 +320,13 @@ textarea {
     font-size: 0.85em;
     text-transform: uppercase;
     letter-spacing: 1px;
+    border-radius: 3px;
+    white-space: nowrap;
+}
+
+.nav-tabs button span {
+    font-size: 1.1em;
+    display: inline-block;
 }
 
 .nav-tabs button:hover {
@@ -332,6 +339,21 @@ textarea {
     border-color: #00ffff;
     color: #00ffff;
     box-shadow: 0 0 15px rgba(0, 255, 65, 0.5);
+}
+
+/* Tab content */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+    animation: fadeIn 0.5s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 /* Cards */
@@ -508,6 +530,11 @@ textarea {
     .header {
         flex-direction: column;
     }
+    
+    .header > div {
+        width: 100%;
+        justify-content: center;
+    }
 
     .nav-tabs {
         width: 100%;
@@ -516,5 +543,12 @@ textarea {
     .nav-tabs button {
         flex: 1;
         min-width: 0;
+        padding: 10px 8px;
+        font-size: 0.75em;
+    }
+    
+    .nav-tabs button span {
+        display: block;
+        margin-bottom: 3px;
     }
 }

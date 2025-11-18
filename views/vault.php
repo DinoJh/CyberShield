@@ -1,6 +1,104 @@
 <?php
 // views/vault.php - Vista de bóveda encriptada con AES-256
+$conn = getDBConnection();
+$userId = $_SESSION['user_id'];
+
+// Verificar si tiene contraseña de bóveda
+$stmt = $conn->prepare("SELECT has_vault_password FROM users WHERE id = ?");
+$stmt->execute([$userId]);
+$user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+$hasVaultPassword = $user['has_vault_password'] ?? false;
+$vaultUnlocked = $_SESSION['vault_unlocked'] ?? false;
 ?>
+
+<!-- Modal de recomendación para crear contraseña de bóveda -->
+<?php if (!$hasVaultPassword): ?>
+<div id="vaultPasswordRecommendation" style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); z-index: 9999; justify-content: center; align-items: center;">
+    <div class="terminal-box" style="max-width: 600px; width: 90%;">
+        <div class="terminal-header">
+            <div class="terminal-dot dot-red"></div>
+            <div class="terminal-dot dot-yellow"></div>
+            <div class="terminal-dot dot-green"></div>
+            <div class="terminal-title">CONFIGURACIÓN DE SEGURIDAD RECOMENDADA</div>
+        </div>
+        <div style="padding: 30px;">
+            <div style="text-align: center; margin-bottom: 25px;">
+                <div style="font-size: 4em; margin-bottom: 15px;">🔐</div>
+                <h3 style="color: #ffff00; text-shadow: 0 0 10px #ffff00; margin-bottom: 10px;">
+                    ⚠️ SEGURIDAD ADICIONAL RECOMENDADA
+                </h3>
+            </div>
+            
+            <div style="background: rgba(0, 255, 255, 0.1); border: 1px solid #00ffff; padding: 20px; border-radius: 3px; margin-bottom: 20px;">
+                <p style="color: #00ffff; line-height: 1.8; text-align: center;">
+                    <strong>¿Por qué crear una contraseña de bóveda?</strong><br><br>
+                    • <strong>Doble capa de protección:</strong> Incluso si alguien accede a tu cuenta, no podrá ver tus notas<br>
+                    • <strong>Seguridad mejorada:</strong> Tus datos más sensibles estarán doblemente encriptados<br>
+                    • <strong>Control total:</strong> Solo tú tendrás acceso a tu bóveda<br><br>
+                    <span style="color: #00ff41;">Recomendado para máxima seguridad ✓</span>
+                </p>
+            </div>
+            
+            <form id="quickSetVaultPassword" onsubmit="quickSetVaultPassword(event)">
+                <div class="input-group">
+                    <div class="terminal-prompt">NUEVA CONTRASEÑA DE BÓVEDA (mín. 8 caracteres):</div>
+                    <input type="password" id="quickVaultPassword" name="vault_password" placeholder="********" required autofocus>
+                </div>
+                <div class="input-group">
+                    <div class="terminal-prompt">CONFIRMAR CONTRASEÑA:</div>
+                    <input type="password" name="confirm_password" placeholder="********" required>
+                </div>
+                <button type="submit" class="btn" style="margin-bottom: 10px;">[ CREAR CONTRASEÑA DE BÓVEDA ]</button>
+                <button type="button" class="btn" onclick="skipVaultPassword()" style="background: rgba(255, 255, 0, 0.1); border-color: #ffff00; color: #ffff00;">
+                    [ OMITIR POR AHORA ]
+                </button>
+            </form>
+            
+            <p style="color: rgba(255, 255, 0, 0.7); font-size: 0.8em; text-align: center; margin-top: 15px;">
+                Puedes configurar esto más tarde desde tu perfil
+            </p>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
+<!-- Modal para desbloquear bóveda -->
+<?php if ($hasVaultPassword && !$vaultUnlocked): ?>
+<div id="unlockVaultModal" style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); z-index: 9999; justify-content: center; align-items: center;">
+    <div class="terminal-box" style="max-width: 500px; width: 90%;">
+        <div class="terminal-header">
+            <div class="terminal-dot dot-red"></div>
+            <div class="terminal-dot dot-yellow"></div>
+            <div class="terminal-dot dot-green"></div>
+            <div class="terminal-title">BÓVEDA BLOQUEADA</div>
+        </div>
+        <div style="padding: 30px;">
+            <div style="text-align: center; margin-bottom: 25px;">
+                <div style="font-size: 4em; margin-bottom: 15px;">🔒</div>
+                <h3 style="color: #00ffff; text-shadow: 0 0 10px #00ffff; margin-bottom: 10px;">
+                    ACCESO RESTRINGIDO
+                </h3>
+            </div>
+            
+            <div style="background: rgba(255, 255, 0, 0.1); border: 1px solid #ffff00; padding: 15px; border-radius: 3px; margin-bottom: 20px; text-align: center;">
+                <p style="color: #ffff00;">
+                    ⚠️ Esta bóveda está protegida con una contraseña adicional.<br>
+                    Ingresa tu contraseña de bóveda para continuar.
+                </p>
+            </div>
+            
+            <form id="unlockVaultForm" onsubmit="unlockVault(event)">
+                <div class="input-group">
+                    <div class="terminal-prompt">CONTRASEÑA DE BÓVEDA:</div>
+                    <input type="password" name="vault_password" placeholder="********" required autofocus>
+                </div>
+                <button type="submit" class="btn">[ DESBLOQUEAR BÓVEDA ]</button>
+            </form>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
 
 <div class="card">
     <h3>▓▒░ CREAR ENTRADA ENCRIPTADA ░▒▓</h3>
@@ -77,6 +175,85 @@
 </div>
 
 <script>
+// Mostrar formulario de contraseña de bóveda
+function showVaultPasswordForm() {
+    document.getElementById('vaultPasswordButtons').style.display = 'none';
+    document.getElementById('quickSetVaultPassword').style.display = 'block';
+    document.getElementById('quickVaultPassword').focus();
+}
+
+// Ocultar formulario de contraseña de bóveda
+function hideVaultPasswordForm() {
+    document.getElementById('vaultPasswordButtons').style.display = 'block';
+    document.getElementById('quickSetVaultPassword').style.display = 'none';
+    document.getElementById('quickSetVaultPassword').reset();
+}
+
+// Configuración rápida de contraseña de bóveda
+async function quickSetVaultPassword(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(event.target);
+    formData.append('action', 'set_vault_password');
+    
+    try {
+        const response = await fetch('api/profile.php', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification(data.message);
+            document.getElementById('vaultPasswordRecommendation').style.display = 'none';
+            loadNotes();
+        } else {
+            showNotification(data.message, 'error');
+        }
+    } catch (error) {
+        showNotification('[ ERROR ] Error al establecer contraseña', 'error');
+        console.error(error);
+    }
+}
+
+// Omitir configuración de contraseña
+function skipVaultPassword() {
+    if (confirm('¿Estás seguro? Puedes configurar la contraseña más tarde desde tu Perfil.')) {
+        document.getElementById('vaultPasswordRecommendation').style.display = 'none';
+        // Usar contraseña de cuenta como temporal
+        loadNotes();
+    }
+}
+
+// Desbloquear bóveda
+async function unlockVault(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(event.target);
+    formData.append('action', 'unlock_vault');
+    
+    try {
+        const response = await fetch('api/profile.php', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification(data.message);
+            document.getElementById('unlockVaultModal').style.display = 'none';
+            loadNotes();
+        } else {
+            showNotification(data.message, 'error');
+        }
+    } catch (error) {
+        showNotification('[ ERROR ] Error al desbloquear', 'error');
+        console.error(error);
+    }
+}
+
 // Guardar nota encriptada
 async function saveNote(event) {
     event.preventDefault();
@@ -142,7 +319,10 @@ async function loadNotes() {
         if (data.success) {
             displayNotes(data.data.notes);
         } else {
-            showNotification(data.message, 'error');
+            // Si el error es por bóveda bloqueada, no mostrar notificación
+            if (!data.message.includes('ACCESO DENEGADO')) {
+                showNotification(data.message, 'error');
+            }
         }
     } catch (error) {
         document.getElementById('notesList').innerHTML = '<p style="color: rgba(255, 0, 0, 0.7); text-align: center; padding: 20px;">[ ERROR ] No se pudieron cargar las notas</p>';
@@ -263,7 +443,13 @@ document.addEventListener('keydown', function(e) {
 
 // Cargar notas al iniciar
 document.addEventListener('DOMContentLoaded', function() {
-    loadNotes();
+    // Solo cargar notas si no hay modal bloqueando
+    const unlockModal = document.getElementById('unlockVaultModal');
+    const recommendModal = document.getElementById('vaultPasswordRecommendation');
+    
+    if (!unlockModal && !recommendModal) {
+        loadNotes();
+    }
 });
 </script>
 

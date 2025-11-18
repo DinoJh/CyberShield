@@ -37,15 +37,34 @@ $randomTip = $securityTips[array_rand($securityTips)];
                 <span class="status-indicator"></span>
                 ▓▒░ CYBERSHIELD COMMAND CENTER ░▒▓
             </h2>
-            <a href="logout.php" class="logout-btn" style="text-decoration: none;">[ DESCONECTAR ]</a>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button onclick="switchTab('profile')" class="btn-small" style="display: flex; align-items: center; gap: 8px; background: rgba(0, 255, 255, 0.1); border-color: #00ffff; color: #00ffff;">
+                    <span style="font-size: 1.2em;">👤</span>
+                    [ PERFIL ]
+                </button>
+                <a href="logout.php" class="logout-btn" style="text-decoration: none; display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.2em;">🚪</span>
+                    [ DESCONECTAR ]
+                </a>
+            </div>
         </div>
 
         <div class="nav-tabs">
-            <button class="active" onclick="switchTab('overview')">[ RESUMEN ]</button>
-            <button onclick="switchTab('password')">[ CONTRASEÑAS ]</button>
-            <button onclick="switchTab('vault')">[ BÓVEDA ]</button>
-            <button onclick="switchTab('messages')">[ COMUNICACIÓN SEGURA ]</button>
-            <button onclick="window.location.href='simuladores.php'" style="background: linear-gradient(45deg, rgba(255, 0, 255, 0.2), rgba(0, 255, 255, 0.2)); border-color: #ff00ff;">[ APRENDE A DEFENDERTE ]</button>
+            <button class="active" onclick="switchTab('overview')" style="display: flex; align-items: center; gap: 6px; justify-content: center;">
+                <span>📊</span> [ RESUMEN ]
+            </button>
+            <button onclick="switchTab('password')" style="display: flex; align-items: center; gap: 6px; justify-content: center;">
+                <span>🔑</span> [ CONTRASEÑAS ]
+            </button>
+            <button onclick="switchTab('vault')" style="display: flex; align-items: center; gap: 6px; justify-content: center;">
+                <span>🔐</span> [ BÓVEDA ]
+            </button>
+            <button onclick="switchTab('messages')" style="display: flex; align-items: center; gap: 6px; justify-content: center;">
+                <span>📡</span> [ COMUNICACIÓN SEGURA ]
+            </button>
+            <button onclick="window.location.href='simuladores.php'" style="display: flex; align-items: center; gap: 6px; justify-content: center; background: linear-gradient(45deg, rgba(255, 0, 255, 0.2), rgba(0, 255, 255, 0.2)); border-color: #ff00ff;">
+                <span>🎮</span> [ APRENDE A DEFENDERTE ]
+            </button>
         </div>
 
         <!-- Tab: Resumen -->
@@ -66,6 +85,11 @@ $randomTip = $securityTips[array_rand($securityTips)];
         <!-- Tab: Comunicación Segura -->
         <div class="tab-content" id="messages" style="display: none;">
             <?php include 'views/messages.php'; ?>
+        </div>
+
+        <!-- Tab: Perfil -->
+        <div class="tab-content" id="profile" style="display: none;">
+            <?php include 'views/profile.php'; ?>
         </div>
     </div>
 
