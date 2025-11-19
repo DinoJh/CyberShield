@@ -148,8 +148,8 @@ try {
                 jsonResponse(false, '[ ERROR ] Las contraseñas nuevas no coinciden');
             }
             
-            // Obtener hash actual
-            $stmt = $conn->prepare("SELECT password_hash FROM users WHERE id = ?");
+            // Obtener datos del usuario
+            $stmt = $conn->prepare("SELECT password_hash, master_salt FROM users WHERE id = ?");
             $stmt->execute([$userId]);
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
             
@@ -158,18 +158,63 @@ try {
                 jsonResponse(false, '[ ERROR ] La contraseña actual es incorrecta');
             }
             
-            // Hashear nueva contraseña
-            $newHash = hashPassword($newPassword);
-            
-            // Actualizar
-            $stmt = $conn->prepare("UPDATE users SET password_hash = ? WHERE id = ?");
-            $stmt->execute([$newHash, $userId]);
-            
-            // Log de seguridad
-            $stmt = $conn->prepare("INSERT INTO security_logs (user_id, action, ip_address, user_agent) VALUES (?, 'CHANGE_ACCOUNT_PASSWORD', ?, ?)");
-            $stmt->execute([$userId, $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown']);
-            
-            jsonResponse(true, '[ ÉXITO ] Contraseña de cuenta actualizada correctamente');
+            // RE-ENCRIPTAR TODAS LAS NOTAS CON LA NUEVA CONTRASEÑA
+            try {
+                // Obtener todas las notas del usuario
+                $stmt = $conn->prepare("SELECT id, encrypted_content FROM vault_notes WHERE user_id = ?");
+                $stmt->execute([$userId]);
+                $notes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                
+                // Desencriptar cada nota con contraseña antigua y re-encriptar con nueva
+                $reencryptedNotes = [];
+                foreach ($notes as $note) {
+                    // Desencriptar con contraseña antigua
+                    $decrypted = decryptData($note['encrypted_content'], $currentPassword, $user['master_salt']);
+                    
+                    if ($decrypted !== false) {
+                        // Re-encriptar con contraseña nueva (usando el mismo salt)
+                        $reencrypted = encryptData($decrypted, $newPassword, $user['master_salt']);
+                        
+                        if ($reencrypted !== false) {
+                            $reencryptedNotes[] = [
+                                'id' => $note['id'],
+                                'content' => $reencrypted
+                            ];
+                        }
+                    }
+                }
+                
+                // Iniciar transacción
+                $conn->beginTransaction();
+                
+                // Actualizar contraseña
+                $newHash = hashPassword($newPassword);
+                $stmt = $conn->prepare("UPDATE users SET password_hash = ? WHERE id = ?");
+                $stmt->execute([$newHash, $userId]);
+                
+                // Actualizar todas las notas re-encriptadas
+                $stmt = $conn->prepare("UPDATE vault_notes SET encrypted_content = ? WHERE id = ?");
+                foreach ($reencryptedNotes as $note) {
+                    $stmt->execute([$note['content'], $note['id']]);
+                }
+                
+                // Confirmar transacción
+                $conn->commit();
+                
+                // Actualizar sesión con nueva contraseña
+                $_SESSION['master_key'] = $newPassword;
+                
+                // Log de seguridad
+                $stmt = $conn->prepare("INSERT INTO security_logs (user_id, action, ip_address, user_agent, details) VALUES (?, 'CHANGE_ACCOUNT_PASSWORD', ?, ?, ?)");
+                $stmt->execute([$userId, $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown', count($reencryptedNotes) . ' notas re-encriptadas']);
+                
+                jsonResponse(true, '[ ÉXITO ] Contraseña de cuenta actualizada. Todas tus notas han sido re-encriptadas automáticamente con la nueva contraseña.');
+                
+            } catch (Exception $e) {
+                // Revertir transacción en caso de error
+                $conn->rollBack();
+                jsonResponse(false, '[ ERROR ] Error al re-encriptar las notas: ' . $e->getMessage());
+            }
             break;
             
         case 'remove_vault_password':

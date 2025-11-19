@@ -66,7 +66,12 @@ $vaultUnlocked = $_SESSION['vault_unlocked'] ?? false;
 <!-- Modal para desbloquear bóveda -->
 <?php if ($hasVaultPassword && !$vaultUnlocked): ?>
 <div id="unlockVaultModal" style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); z-index: 9999; justify-content: center; align-items: center;">
-    <div class="terminal-box" style="max-width: 500px; width: 90%;">
+    <div class="terminal-box" style="max-width: 500px; width: 90%; position: relative;">
+        <!-- Botón X para cerrar -->
+        <button onclick="closeUnlockModal()" class="close-modal-btn" title="Cerrar">
+            ✕
+        </button>
+        
         <div class="terminal-header">
             <div class="terminal-dot dot-red"></div>
             <div class="terminal-dot dot-yellow"></div>
@@ -175,6 +180,18 @@ $vaultUnlocked = $_SESSION['vault_unlocked'] ?? false;
 </div>
 
 <script>
+// Cerrar modal de recomendación
+function closeRecommendationModal() {
+    document.getElementById('vaultPasswordRecommendation').style.display = 'none';
+}
+
+// Cerrar modal de desbloqueo
+function closeUnlockModal() {
+    if (confirm('⚠️ Si cierras este modal, no podrás acceder a tu bóveda.\n\n¿Deseas salir de la bóveda?')) {
+        window.location.href = 'index.php';
+    }
+}
+
 // Mostrar formulario de contraseña de bóveda
 function showVaultPasswordForm() {
     document.getElementById('vaultPasswordButtons').style.display = 'none';
@@ -457,6 +474,33 @@ document.addEventListener('DOMContentLoaded', function() {
 @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.3; }
+}
+
+/* Estilo para botón X de cerrar */
+.close-modal-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(255, 0, 0, 0.2);
+    border: 1px solid #ff0000;
+    color: #ff0000;
+    width: 30px;
+    height: 30px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 1.2em;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    font-weight: bold;
+}
+
+.close-modal-btn:hover {
+    background: rgba(255, 0, 0, 0.4);
+    box-shadow: 0 0 15px rgba(255, 0, 0, 0.6);
+    transform: scale(1.1);
 }
 
 input[type="file"] {
