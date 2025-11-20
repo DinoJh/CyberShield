@@ -50,19 +50,44 @@ CREATE TABLE IF NOT EXISTS user_stats (
     UNIQUE KEY unique_user_stats (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Tabla de mensajes seguros encriptados
+-- Tabla de mensajes seguros encriptados (actualizada)
 CREATE TABLE IF NOT EXISTS secure_messages (
     id INT AUTO_INCREMENT PRIMARY KEY,
     sender_id INT NOT NULL,
     receiver_id INT NOT NULL,
     encrypted_content TEXT NOT NULL,
+    message_type ENUM('text', 'image', 'document') DEFAULT 'text',
+    file_extension VARCHAR(10) NULL,
+    file_size INT NULL,
+    mime_type VARCHAR(100) NULL,
+    auto_delete_minutes INT NULL,
     sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     read_at TIMESTAMP NULL,
+    deleted_at TIMESTAMP NULL,
+    is_deleted BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_receiver (receiver_id),
     INDEX idx_sender (sender_id),
-    INDEX idx_sent_at (sent_at)
+    INDEX idx_sent_at (sent_at),
+    INDEX idx_deleted_at (deleted_at),
+    INDEX idx_is_deleted (is_deleted)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Tabla de conversaciones (para mejor organización)
+CREATE TABLE IF NOT EXISTS conversations (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user1_id INT NOT NULL,
+    user2_id INT NOT NULL,
+    last_message_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_message_preview TEXT,
+    unread_count_user1 INT DEFAULT 0,
+    unread_count_user2 INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user1_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (user2_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_conversation (user1_id, user2_id),
+    INDEX idx_last_message (last_message_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Tabla de logs de seguridad
