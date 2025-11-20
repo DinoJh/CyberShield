@@ -198,11 +198,15 @@ try {
             $conversationKey = getConversationKey($userId, $otherUserId);
             $conversationSalt = getConversationSalt($userId, $otherUserId);
             
-            // Obtener mensajes no eliminados
-            $query = "SELECT id, sender_id, receiver_id, encrypted_content, message_type, file_extension, file_size, auto_delete_minutes, sent_at, read_at, is_deleted 
+            // Obtener mensajes no eliminados (o eliminados solo para el otro usuario)
+            $query = "SELECT id, sender_id, receiver_id, encrypted_content, message_type, file_extension, file_size, auto_delete_minutes, sent_at, read_at, is_deleted, deleted_for_sender, deleted_for_receiver
                      FROM secure_messages 
                      WHERE ((sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?))
-                     AND is_deleted = FALSE";
+                     AND is_deleted = FALSE
+                     AND (
+                         (sender_id = ? AND deleted_for_sender = FALSE) OR
+                         (receiver_id = ? AND deleted_for_receiver = FALSE)
+                     )";
             
             if ($lastMessageId > 0) {
                 $query .= " AND id > ?";
@@ -213,9 +217,9 @@ try {
             $stmt = $conn->prepare($query);
             
             if ($lastMessageId > 0) {
-                $stmt->execute([$userId, $otherUserId, $otherUserId, $userId, $lastMessageId]);
+                $stmt->execute([$userId, $otherUserId, $otherUserId, $userId, $userId, $userId, $lastMessageId]);
             } else {
-                $stmt->execute([$userId, $otherUserId, $otherUserId, $userId]);
+                $stmt->execute([$userId, $otherUserId, $otherUserId, $userId, $userId, $userId]);
             }
             
             $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -227,6 +231,8 @@ try {
                     $message['content'] = $decrypted !== false ? $decrypted : '[Error al desencriptar]';
                 }
                 unset($message['encrypted_content']);
+                unset($message['deleted_for_sender']);
+                unset($message['deleted_for_receiver']);
                 
                 // Marcar como leído si es receptor
                 if ($message['receiver_id'] == $userId && $message['read_at'] === null) {
@@ -279,20 +285,51 @@ try {
             break;
             
         case 'delete_message':
+            // NUEVO: Eliminar mensaje - Ahora con opciones
             $messageId = intval($_POST['message_id'] ?? 0);
+            $deleteType = $_POST['delete_type'] ?? 'me'; // 'me' o 'everyone'
             
             if ($messageId <= 0) {
                 jsonResponse(false, '[ ERROR ] ID inválido');
             }
             
-            // Solo el emisor puede eliminar
-            $stmt = $conn->prepare("UPDATE secure_messages SET is_deleted = TRUE, deleted_at = NOW() WHERE id = ? AND sender_id = ?");
-            $stmt->execute([$messageId, $userId]);
+            // Verificar que el mensaje existe y el usuario tiene permiso
+            $stmt = $conn->prepare("SELECT sender_id, receiver_id FROM secure_messages WHERE id = ? AND (sender_id = ? OR receiver_id = ?)");
+            $stmt->execute([$messageId, $userId, $userId]);
+            $message = $stmt->fetch(PDO::FETCH_ASSOC);
             
-            if ($stmt->rowCount() > 0) {
-                jsonResponse(true, '[ ELIMINADO ] Mensaje borrado');
+            if (!$message) {
+                jsonResponse(false, '[ ERROR ] Mensaje no encontrado');
+            }
+            
+            $isSender = $message['sender_id'] == $userId;
+            
+            if ($deleteType === 'everyone') {
+                // Solo el emisor puede eliminar para todos
+                if (!$isSender) {
+                    jsonResponse(false, '[ ERROR ] Solo el emisor puede eliminar para todos');
+                }
+                
+                // Eliminar para todos (marca como eliminado completamente)
+                $stmt = $conn->prepare("UPDATE secure_messages SET is_deleted = TRUE, deleted_at = NOW() WHERE id = ?");
+                $stmt->execute([$messageId]);
+                
+                jsonResponse(true, '[ ELIMINADO ] Mensaje borrado para todos');
+                
             } else {
-                jsonResponse(false, '[ ERROR ] No se pudo eliminar');
+                // Eliminar solo para mí
+                if ($isSender) {
+                    $stmt = $conn->prepare("UPDATE secure_messages SET deleted_for_sender = TRUE WHERE id = ?");
+                } else {
+                    $stmt = $conn->prepare("UPDATE secure_messages SET deleted_for_receiver = TRUE WHERE id = ?");
+                }
+                $stmt->execute([$messageId]);
+                
+                // Si ambos lo eliminaron, marcar como completamente eliminado
+                $stmt = $conn->prepare("UPDATE secure_messages SET is_deleted = TRUE, deleted_at = NOW() WHERE id = ? AND deleted_for_sender = TRUE AND deleted_for_receiver = TRUE");
+                $stmt->execute([$messageId]);
+                
+                jsonResponse(true, '[ ELIMINADO ] Mensaje borrado para ti');
             }
             break;
             

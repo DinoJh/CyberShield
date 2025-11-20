@@ -119,6 +119,63 @@
     margin-left: 5px;
 }
 
+/* Estilos para el menú de opciones */
+.message-options {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.message-bubble:hover .message-options {
+    opacity: 1;
+}
+
+.options-btn {
+    background: rgba(0, 0, 0, 0.7);
+    border: 1px solid currentColor;
+    color: inherit;
+    padding: 2px 6px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.8em;
+}
+
+.options-menu {
+    position: absolute;
+    top: 25px;
+    right: 0;
+    background: rgba(10, 14, 39, 0.98);
+    border: 1px solid #00ff41;
+    border-radius: 3px;
+    padding: 5px;
+    display: none;
+    z-index: 1000;
+    min-width: 150px;
+}
+
+.options-menu.show {
+    display: block;
+}
+
+.option-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+    border-radius: 2px;
+    font-size: 0.85em;
+}
+
+.option-item:hover {
+    background: rgba(0, 255, 65, 0.2);
+}
+
+.option-item.danger:hover {
+    background: rgba(255, 0, 0, 0.2);
+    color: #ff4444;
+}
+
 @media (max-width: 768px) {
     .chat-container {
         grid-template-columns: 1fr;
@@ -131,7 +188,7 @@
 </style>
 
 <div class="card">
-    <h3>▓▒░ SISTEMA DE MENSAJERÍA ENCRIPTADA ░▒▓</h3>
+    <h3>▓▒▒ SISTEMA DE MENSAJERÍA ENCRIPTADA ▒▒▓</h3>
     
     <!-- Selector de usuario y configuración -->
     <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
@@ -188,7 +245,7 @@
 
 <!-- Card info encriptación -->
 <div class="card">
-    <h3>▓▒░ ENCRIPTACIÓN DE EXTREMO A EXTREMO ░▒▓</h3>
+    <h3>▓▒▒ ENCRIPTACIÓN DE EXTREMO A EXTREMO ▒▒▓</h3>
     <div style="background: rgba(0, 255, 255, 0.1); border: 1px solid #00ffff; padding: 15px; border-radius: 3px;">
         <p style="color: #00ffff; line-height: 1.8; font-size: 0.85em;">
             <strong>[ COMUNICACIÓN 100% SEGURA ]</strong><br><br>
@@ -196,6 +253,7 @@
             > <strong style="color: #00ff41;">Mensajes de texto:</strong> Encriptados automáticamente<br>
             > <strong style="color: #00ff41;">Archivos:</strong> Imágenes (5MB) y documentos (10MB) encriptados<br>
             > <strong style="color: #00ff41;">Auto-eliminación:</strong> Configurable desde 1 minuto hasta 24 horas<br>
+            > <strong style="color: #00ff41;">Eliminar mensajes:</strong> Para ti o para todos<br>
             > <strong style="color: #00ff41;">Privacidad total:</strong> Solo emisor y receptor pueden leer mensajes<br><br>
             ⚠️ Los mensajes eliminados NO pueden recuperarse<br>
             🔒 Nadie, ni siquiera administradores, puede leer tus mensajes
@@ -352,11 +410,77 @@ function formatMessage(msg) {
     }
     
     return `
-        <div class="message-bubble ${isSent ? 'sent' : 'received'}">
+        <div class="message-bubble ${isSent ? 'sent' : 'received'}" id="msg-${msg.id}">
+            <div class="message-options">
+                <button class="options-btn" onclick="toggleMessageOptions(${msg.id}, event)">⋮</button>
+                <div class="options-menu" id="options-${msg.id}">
+                    ${isSent ? `<div class="option-item danger" onclick="deleteMessage(${msg.id}, 'everyone')">🗑️ Eliminar para todos</div>` : ''}
+                    <div class="option-item" onclick="deleteMessage(${msg.id}, 'me')">🗑️ Eliminar para mí</div>
+                </div>
+            </div>
             <div>${content}</div>
             <div class="message-time">${time} ${deleteInfo} ${msg.read_at && isSent ? '✓✓' : isSent ? '✓' : ''}</div>
         </div>
     `;
+}
+
+// Toggle menú de opciones
+function toggleMessageOptions(messageId, event) {
+    event.stopPropagation();
+    const menu = document.getElementById(`options-${messageId}`);
+    
+    // Cerrar todos los demás menús
+    document.querySelectorAll('.options-menu').forEach(m => {
+        if (m.id !== `options-${messageId}`) {
+            m.classList.remove('show');
+        }
+    });
+    
+    menu.classList.toggle('show');
+}
+
+// Cerrar menús al hacer click fuera
+document.addEventListener('click', function() {
+    document.querySelectorAll('.options-menu').forEach(m => m.classList.remove('show'));
+});
+
+// Eliminar mensaje
+async function deleteMessage(messageId, deleteType) {
+    const confirmMsg = deleteType === 'everyone' 
+        ? '¿Eliminar este mensaje para todos? Esta acción no se puede deshacer.'
+        : '¿Eliminar este mensaje para ti?';
+    
+    if (!confirm(confirmMsg)) return;
+    
+    try {
+        const formData = new FormData();
+        formData.append('action', 'delete_message');
+        formData.append('message_id', messageId);
+        formData.append('delete_type', deleteType);
+        
+        const response = await fetch('api/messages.php', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Eliminar visualmente el mensaje
+            const msgElement = document.getElementById(`msg-${messageId}`);
+            if (msgElement) {
+                msgElement.style.transition = 'opacity 0.3s';
+                msgElement.style.opacity = '0';
+                setTimeout(() => msgElement.remove(), 300);
+            }
+            
+            showNotification(data.message);
+        } else {
+            showNotification(data.message, 'error');
+        }
+    } catch (error) {
+        showNotification('[ ERROR ] Error al eliminar mensaje', 'error');
+    }
 }
 
 // Enviar mensaje de texto
