@@ -2,21 +2,6 @@
 // index.php - Dashboard principal
 require_once 'config.php';
 requireLogin();
-
-// Tips de seguridad
-$securityTips = [
-    "> NUNCA compartir contraseñas por email o mensajes sin encriptar",
-    "> HABILITAR autenticación de dos factores en todas las cuentas críticas",
-    "> ACTUALIZAR contraseñas cada 90 días para máxima seguridad",
-    "> USAR contraseñas únicas para cada servicio - nunca reutilizar",
-    "> VERIFICAR certificados SSL antes de ingresar datos sensibles",
-    "> MANTENER sistema y software actualizados para parchar vulnerabilidades",
-    "> IMPLEMENTAR gestor de contraseñas para almacenamiento seguro",
-    "> MONITOREAR registros de actividad de cuentas para comportamiento sospechoso",
-    "> RESPALDAR datos encriptados en ubicaciones seguras sin conexión",
-    "> EVITAR WiFi público para transacciones sensibles"
-];
-$randomTip = $securityTips[array_rand($securityTips)];
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -95,36 +80,74 @@ $randomTip = $securityTips[array_rand($securityTips)];
 
     <script src="assets/js/main.js"></script>
     <script>
-        // Mostrar tip de seguridad aleatorio
-        document.addEventListener('DOMContentLoaded', function() {
-            const tipElement = document.getElementById('securityTip');
-            if (tipElement) {
-                tipElement.textContent = '<?php echo $randomTip; ?>';
-            }
-        });
+        // Detectar dispositivo móvil y mostrar advertencia
+        function isMobileDevice() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
 
-        // Fix para el sistema de pestañas
-        function switchTab(tabName) {
-            // Ocultar todas las pestañas
-            const tabs = document.querySelectorAll('.tab-content');
-            tabs.forEach(tab => tab.style.display = 'none');
+        // Mostrar advertencia en móviles (solo una vez por sesión)
+        if (isMobileDevice() && !sessionStorage.getItem('mobileWarningShown')) {
+            const mobileWarning = document.createElement('div');
+            mobileWarning.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.98);
+                z-index: 99999;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                padding: 20px;
+            `;
             
-            // Remover clase active de todos los botones
-            const buttons = document.querySelectorAll('.nav-tabs button');
-            buttons.forEach(btn => {
-                if (!btn.hasAttribute('onclick') || !btn.getAttribute('onclick').includes('window.location')) {
-                    btn.classList.remove('active');
-                }
-            });
+            mobileWarning.innerHTML = `
+                <div style="
+                    background: rgba(10, 14, 39, 0.95);
+                    border: 2px solid #ffff00;
+                    border-radius: 5px;
+                    padding: 30px;
+                    max-width: 500px;
+                    text-align: center;
+                    box-shadow: 0 0 30px rgba(255, 255, 0, 0.5);
+                ">
+                    <div style="font-size: 4em; margin-bottom: 20px;">📱</div>
+                    <h2 style="color: #ffff00; text-shadow: 0 0 10px #ffff00; margin-bottom: 20px; font-family: 'Fira Code', monospace;">
+                        ⚠️ DISPOSITIVO MÓVIL DETECTADO
+                    </h2>
+                    <p style="color: #00ffff; line-height: 1.8; margin-bottom: 25px; font-family: 'Fira Code', monospace; font-size: 0.95em;">
+                        Este sitio está desarrollado principalmente para computadores.<br><br>
+                        Para una mejor experiencia, por favor:<br>
+                        <strong style="color: #00ff41;">ACTIVA EL MODO "SITIO PARA COMPUTADORA"</strong>
+                    </p>
+                    <div style="background: rgba(0, 255, 255, 0.1); border: 1px solid #00ffff; padding: 15px; border-radius: 3px; margin-bottom: 20px;">
+                        <p style="color: rgba(0, 255, 255, 0.8); font-size: 0.85em; line-height: 1.6; font-family: 'Fira Code', monospace;">
+                            📖 <strong>Cómo activarlo:</strong><br>
+                            Chrome/Edge: Menú (⋮) → "Sitio de escritorio"<br>
+                            Safari: (AA) → "Solicitar sitio de escritorio"<br>
+                            Firefox: Menú (⋮) → "Sitio de escritorio"
+                        </p>
+                    </div>
+                    <button onclick="sessionStorage.setItem('mobileWarningShown', 'true'); this.parentElement.parentElement.remove();" style="
+                        padding: 12px 30px;
+                        background: rgba(0, 255, 65, 0.2);
+                        border: 2px solid #00ff41;
+                        color: #00ff41;
+                        font-family: 'Fira Code', monospace;
+                        cursor: pointer;
+                        font-size: 1em;
+                        border-radius: 3px;
+                        transition: all 0.3s;
+                        text-transform: uppercase;
+                        font-weight: bold;
+                    " onmouseover="this.style.boxShadow='0 0 20px rgba(0, 255, 65, 0.6)'; this.style.background='rgba(0, 255, 65, 0.3)';" onmouseout="this.style.boxShadow=''; this.style.background='rgba(0, 255, 65, 0.2)';">
+                        [ ENTENDIDO, CONTINUAR DE TODOS MODOS ]
+                    </button>
+                </div>
+            `;
             
-            // Mostrar la pestaña seleccionada
-            const activeTab = document.getElementById(tabName);
-            if (activeTab) {
-                activeTab.style.display = 'block';
-            }
-            
-            // Agregar clase active al botón clickeado
-            event.target.classList.add('active');
+            document.body.appendChild(mobileWarning);
         }
     </script>
 </body>

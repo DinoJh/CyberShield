@@ -27,9 +27,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = '[ ERROR ] Todos los campos son obligatorios';
         } elseif (strlen($username) < 3 || strlen($username) > 50) {
             $error = '[ ERROR ] El usuario debe tener entre 3 y 50 caracteres';
-        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $error = '[ ERROR ] Email inválido';
-        } elseif (strlen($password) < 8) {
+        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL) || 
+                !preg_match("/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/", $email)) {
+            $error = '[ ERROR ] El correo electrónico no es válido. Usa un formato correcto como ejemplo@dominio.com';
+        }elseif (strlen($password) < 8) {
             $error = '[ ERROR ] La contraseña debe tener al menos 8 caracteres';
         } elseif ($password !== $confirmPassword) {
             $error = '[ ERROR ] Las contraseñas no coinciden';
