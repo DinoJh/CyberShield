@@ -167,8 +167,8 @@ try {
             
             // Guardar en base de datos
             $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-            $stmt = $conn->prepare("INSERT INTO vault_notes (user_id, title, encrypted_content, content_type, file_extension) VALUES (?, ?, ?, 'image', ?)");
-            $stmt->execute([$userId, $title, $encryptedContent, $extension]);
+            $stmt = $conn->prepare("INSERT INTO vault_notes (user_id, title, encrypted_content, content_type, file_extension, file_size, mime_type) VALUES (?, ?, ?, 'image', ?, ?, ?)");
+            $stmt->execute([$userId, $title, $encryptedContent, $extension, $file['size'], $file['type']]);
             
             $noteId = $conn->lastInsertId();
             
@@ -181,6 +181,61 @@ try {
             $stmt->execute([$userId, $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown']);
             
             jsonResponse(true, '[ ÉXITO ] Imagen encriptada y almacenada', ['id' => $noteId]);
+            break;
+            
+        case 'upload_document':
+            // Subir y encriptar documento (Word, Excel, PDF)
+            if (!isset($_FILES['document'])) {
+                jsonResponse(false, '[ ERROR ] No se recibió ningún documento');
+            }
+            
+            $file = $_FILES['document'];
+            $allowedTypes = [
+                'application/pdf',
+                'application/msword', // .doc
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+                'application/vnd.ms-excel', // .xls
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+                'application/vnd.ms-powerpoint', // .ppt
+                'application/vnd.openxmlformats-officedocument.presentationml.presentation', // .pptx
+                'text/plain' // .txt
+            ];
+            
+            if (!in_array($file['type'], $allowedTypes)) {
+                jsonResponse(false, '[ ERROR ] Tipo de documento no permitido. Solo: PDF, Word, Excel, PowerPoint, TXT');
+            }
+            
+            if ($file['size'] > 10 * 1024 * 1024) { // 10MB máximo para documentos
+                jsonResponse(false, '[ ERROR ] Archivo muy grande (máx. 10MB)');
+            }
+            
+            // Leer contenido del documento
+            $documentContent = file_get_contents($file['tmp_name']);
+            $title = sanitizeInput($_POST['title'] ?? pathinfo($file['name'], PATHINFO_FILENAME));
+            
+            // Encriptar documento
+            $encryptedContent = encryptData($documentContent, $masterKey, $masterSalt);
+            
+            if ($encryptedContent === false) {
+                jsonResponse(false, '[ ERROR ] Fallo al encriptar el documento');
+            }
+            
+            // Guardar en base de datos
+            $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+            $stmt = $conn->prepare("INSERT INTO vault_notes (user_id, title, encrypted_content, content_type, file_extension, file_size, mime_type) VALUES (?, ?, ?, 'document', ?, ?, ?)");
+            $stmt->execute([$userId, $title, $encryptedContent, $extension, $file['size'], $file['type']]);
+            
+            $noteId = $conn->lastInsertId();
+            
+            // Actualizar estadísticas
+            $stmt = $conn->prepare("UPDATE user_stats SET notes_count = notes_count + 1 WHERE user_id = ?");
+            $stmt->execute([$userId]);
+            
+            // Log de seguridad
+            $stmt = $conn->prepare("INSERT INTO security_logs (user_id, action, ip_address, user_agent, details) VALUES (?, 'UPLOAD_DOCUMENT', ?, ?, ?)");
+            $stmt->execute([$userId, $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown', ".$extension - " . round($file['size']/1024, 2) . "KB"]);
+            
+            jsonResponse(true, '[ ÉXITO ] Documento encriptado y almacenado', ['id' => $noteId]);
             break;
             
         case 'download_image':
@@ -219,6 +274,51 @@ try {
             
             header('Content-Type: ' . $mimeType);
             header('Content-Disposition: inline; filename="' . $note['title'] . '.' . $note['file_extension'] . '"');
+            echo $decryptedContent;
+            exit();
+            break;
+            
+        case 'download_document':
+            // Descargar y desencriptar documento
+            $noteId = intval($_GET['note_id'] ?? 0);
+            
+            if ($noteId <= 0) {
+                die('ID de nota inválido');
+            }
+            
+            $stmt = $conn->prepare("SELECT title, encrypted_content, file_extension, mime_type FROM vault_notes WHERE id = ? AND user_id = ? AND content_type = 'document'");
+            $stmt->execute([$noteId, $userId]);
+            $note = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$note) {
+                die('Documento no encontrado');
+            }
+            
+            // Desencriptar documento
+            $decryptedContent = decryptData($note['encrypted_content'], $masterKey, $masterSalt);
+            
+            if ($decryptedContent === false) {
+                die('Fallo al desencriptar el documento');
+            }
+            
+            // Determinar mime type
+            $mimeTypes = [
+                'pdf' => 'application/pdf',
+                'doc' => 'application/msword',
+                'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'xls' => 'application/vnd.ms-excel',
+                'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'ppt' => 'application/vnd.ms-powerpoint',
+                'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                'txt' => 'text/plain'
+            ];
+            
+            $mimeType = $note['mime_type'] ?? $mimeTypes[$note['file_extension']] ?? 'application/octet-stream';
+            
+            // Enviar documento
+            header('Content-Type: ' . $mimeType);
+            header('Content-Disposition: attachment; filename="' . $note['title'] . '.' . $note['file_extension'] . '"');
+            header('Content-Length: ' . strlen($decryptedContent));
             echo $decryptedContent;
             exit();
             break;

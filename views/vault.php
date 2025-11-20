@@ -136,6 +136,24 @@ $vaultUnlocked = $_SESSION['vault_unlocked'] ?? false;
 </div>
 
 <div class="card">
+    <h3>▓▒░ SUBIR DOCUMENTO ENCRIPTADO ░▒▓</h3>
+    <form id="documentForm" onsubmit="uploadDocument(event)" enctype="multipart/form-data">
+        <div class="input-group">
+            <div class="terminal-prompt">TÍTULO DEL DOCUMENTO:</div>
+            <input type="text" id="documentTitle" name="title" placeholder="documento_clasificado">
+        </div>
+        <div class="input-group">
+            <div class="terminal-prompt">SELECCIONAR DOCUMENTO (máx. 10MB):</div>
+            <input type="file" id="documentFile" name="document" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" required style="padding: 10px; color: #00ff41;">
+            <p style="color: rgba(0, 255, 255, 0.6); font-size: 0.8em; margin-top: 8px;">
+                📄 Formatos soportados: PDF, Word (.doc, .docx), Excel (.xls, .xlsx), PowerPoint (.ppt, .pptx), TXT
+            </p>
+        </div>
+        <button type="submit" class="btn">[ ENCRIPTAR Y SUBIR DOCUMENTO ]</button>
+    </form>
+</div>
+
+<div class="card">
     <h3>▓▒░ BÓVEDA ENCRIPTADA ░▒▓</h3>
     <div id="notesList">
         <p style="color: rgba(0, 255, 65, 0.5); text-align: center; padding: 20px;">
@@ -155,8 +173,12 @@ $vaultUnlocked = $_SESSION['vault_unlocked'] ?? false;
             > <strong style="color: #00ff41;">IV:</strong> Vector de inicialización único por entrada<br>
             > <strong style="color: #00ff41;">Salt:</strong> Salt único por usuario<br>
             > <strong style="color: #00ff41;">Almacenamiento:</strong> Base de datos MySQL encriptada<br><br>
+            📁 <strong style="color: #00ff41;">Tipos de archivo soportados:</strong><br>
+            • Notas de texto<br>
+            • Imágenes: JPEG, PNG, GIF, WEBP (máx. 5MB)<br>
+            • Documentos: PDF, Word, Excel, PowerPoint, TXT (máx. 10MB)<br><br>
             ⚠️ <strong>IMPORTANTE:</strong> Sin tu clave maestra, los datos son irrecuperables.<br>
-            ✓ Soporta texto e imágenes encriptadas
+            ✓ Todos los archivos se encriptan con AES-256 antes de almacenarse
         </p>
     </div>
 </div>
@@ -327,6 +349,34 @@ async function uploadImage(event) {
     }
 }
 
+// Subir documento encriptado
+async function uploadDocument(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(event.target);
+    formData.append('action', 'upload_document');
+    
+    try {
+        const response = await fetch('api/vault.php', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification(data.message);
+            document.getElementById('documentForm').reset();
+            loadNotes();
+        } else {
+            showNotification(data.message, 'error');
+        }
+    } catch (error) {
+        showNotification('[ ERROR ] Error al subir el documento', 'error');
+        console.error(error);
+    }
+}
+
 // Cargar todas las notas
 async function loadNotes() {
     try {
@@ -357,8 +407,36 @@ function displayNotes(notes) {
     }
     
     notesList.innerHTML = notes.map(note => {
-        const icon = note.content_type === 'image' ? '🖼️' : '📄';
-        const typeLabel = note.content_type === 'image' ? 'IMAGEN' : 'TEXTO';
+        let icon, typeLabel, actionButton;
+        
+        switch(note.content_type) {
+            case 'image':
+                icon = '🖼️';
+                typeLabel = 'IMAGEN';
+                actionButton = `<button class="btn-small" onclick="viewImage(${note.id})">[ VER IMAGEN ]</button>`;
+                break;
+            case 'document':
+                // Iconos específicos por tipo de documento
+                const docIcons = {
+                    'pdf': '📕',
+                    'doc': '📘',
+                    'docx': '📘',
+                    'xls': '📗',
+                    'xlsx': '📗',
+                    'ppt': '📙',
+                    'pptx': '📙',
+                    'txt': '📄'
+                };
+                icon = docIcons[note.file_extension] || '📄';
+                typeLabel = 'DOCUMENTO .' + (note.file_extension || '').toUpperCase();
+                actionButton = `<button class="btn-small" onclick="downloadDocument(${note.id})">[ DESCARGAR ]</button>`;
+                break;
+            default:
+                icon = '📄';
+                typeLabel = 'TEXTO';
+                actionButton = `<button class="btn-small" onclick="viewNote(${note.id})">[ DESENCRIPTAR Y VER ]</button>`;
+        }
+        
         const date = new Date(note.created_at).toLocaleString('es-PE');
         
         return `
@@ -371,10 +449,7 @@ function displayNotes(notes) {
                     MARCA DE TIEMPO: ${date}
                 </p>
                 <div class="note-actions">
-                    ${note.content_type === 'text' ? 
-                        `<button class="btn-small" onclick="viewNote(${note.id})">[ DESENCRIPTAR Y VER ]</button>` :
-                        `<button class="btn-small" onclick="viewImage(${note.id})">[ DESCARGAR IMAGEN ]</button>`
-                    }
+                    ${actionButton}
                     <button class="btn-small" onclick="deleteNote(${note.id})">[ ELIMINAR ]</button>
                 </div>
             </div>
@@ -414,6 +489,11 @@ async function viewNote(noteId) {
 // Ver/descargar imagen
 function viewImage(noteId) {
     window.open('api/vault.php?action=download_image&note_id=' + noteId, '_blank');
+}
+
+// Descargar documento
+function downloadDocument(noteId) {
+    window.location.href = 'api/vault.php?action=download_document&note_id=' + noteId;
 }
 
 // Cerrar modal
