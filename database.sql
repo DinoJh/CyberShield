@@ -119,3 +119,13 @@ CREATE TABLE IF NOT EXISTS active_sessions (
     INDEX idx_user_id (user_id),
     INDEX idx_expires_at (expires_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Agregar columnas para eliminar mensajes individualmente
+ALTER TABLE secure_messages 
+ADD COLUMN deleted_for_sender BOOLEAN DEFAULT FALSE AFTER is_deleted,
+ADD COLUMN deleted_for_receiver BOOLEAN DEFAULT FALSE AFTER deleted_for_sender;
+
+-- Agregar índices para mejor rendimiento
+ALTER TABLE secure_messages
+ADD INDEX idx_deleted_for_sender (deleted_for_sender),
+ADD INDEX idx_deleted_for_receiver (deleted_for_receiver);

@@ -8,7 +8,6 @@
     display: grid;
     grid-template-columns: 300px 1fr;
     gap: 20px;
-    height: 70vh;
 }
 
 .conversations-list {
@@ -16,7 +15,28 @@
     border: 1px solid #00ff41;
     border-radius: 5px;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 15px;
+    height: 550px;
+    max-height: 550px;
+}
+
+.conversations-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.conversations-list::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+}
+
+.conversations-list::-webkit-scrollbar-thumb {
+    background: rgba(0, 255, 65, 0.5);
+    border-radius: 4px;
+}
+
+.conversations-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 255, 65, 0.8);
 }
 
 .conversation-item {
@@ -55,12 +75,33 @@
 }
 
 .chat-messages {
-    flex: 1;
+    height: 450px;
+    max-height: 450px;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 20px;
     display: flex;
     flex-direction: column;
     gap: 15px;
+    scroll-behavior: smooth;
+}
+
+.chat-messages::-webkit-scrollbar {
+    width: 10px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 5px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+    background: rgba(0, 255, 65, 0.5);
+    border-radius: 5px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 255, 65, 0.8);
 }
 
 .message-bubble {
@@ -179,10 +220,16 @@
 @media (max-width: 768px) {
     .chat-container {
         grid-template-columns: 1fr;
+        height: calc(100vh - 300px);
+        min-height: 400px;
     }
     
     .conversations-list {
         max-height: 200px;
+    }
+    
+    .message-bubble {
+        max-width: 85%;
     }
 }
 </style>
